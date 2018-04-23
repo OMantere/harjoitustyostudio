@@ -2,39 +2,62 @@ clear all
 close all
 
 % Saapuvien autojen jakauman ominaisuudet vuorokauden aikana
-expected = [3 3 3 3 3 3 10 20 60 40 30 20 40 20 30 14 13 15 15 10 8 3 3 3];
-variance = [3 3 3 2 2 2 3 5 7 10 10 10 7 5 3 2 2 3 3 4 4 2 2 2];
+defaultExpected = [3 3 3 3 3 3 10 20 60 40 30 20 40 20 30 14 13 15 15 10 8 3 3 3];
+defaultSigma = [3 3 3 2 2 2 3 5 7 10 10 10 7 5 3 2 2 3 3 4 4 2 2 2];
 
-length = 24; % simulointiaika tunteina
-cars = zeros(1,length); 
-cars(1) = 10; % alustetaan autojen m‰‰r‰ ajan funktiona
+length = 100; % simulointiaika vuorokausina
+cars = zeros(1,length*24); 
+leaving = zeros(1,length*24);
+entering = zeros(1,length*24);
+carcount = 10; % alustetaan autojen m√§√§r√§ ajan funktiona
 
+fineFlags = (rand(1,length + 2)<= 1/30 ); % totuusarvovektori, joka m√§√§r√§√§, saapuuko lappuliisa 
+% fineFlags = zeros(1,length+2), jos ei lappuliisoja
 norm = sum( (0.7*ones(1,5)).^(1:5) );
 weights = 1/norm * (0.7*ones(1,5)).^(1:5); % poistuvien autojen painokertoimet
 
-
-i = 1;
-while (i<length)
+% iteroidaan vuorokausien yli:
+i = 3;
+while ((i-2)<=length)
     
-   fineFlag = (rand(1,1)<=1/30) % totuusarvo, saapuuko lappuliisa.
-   %TODO: mit‰ tapahtuu, kun lappuliisa saapuu?
+   % saapuvien autojen m√§√§r√§ joka tunti:
+   if ( fineFlags(i-1) || fineFlags(i-2) ) % jos lappuliisa:
+      incomingCars = normrnd( 3 * ones(1,24), 2 * ones(1,24) );
+   else % muutoin defaulttiarvot:
+      incomingCars = normrnd( defaultExpected, defaultSigma );
+   end
    
-   % saapuvien autojen m‰‰r‰ ajanhetkell‰ i:
-   carsEntering = normrnd(expected(1 + rem(i,23)),variance(1 + rem(i,23)));
-   
-   % autot viimeiselt‰ viidelt‰ tunnilta
-   lastCars = cars(max(i-4,1):i);
-   
-   % poistuvien autojen m‰‰r‰ (lastCars painotettu weightsill‰ + virhe)
-   carsLeaving = sum(lastCars .* weights((end+1-size(lastCars,2)):end)) + normrnd(0,25);
-   
-   % autojen m‰‰r‰ seuraavalla ajanhetkell‰, rajoitettu v‰lille 0-200.
-   cars(i+1) = min(max(cars(i) - carsLeaving,0)+carsEntering,200);
+   %iteroidaan vuorokauden tuntien yli:
+   j = 1;
+   while (j <= 24)
+       currentIndex = 24 * (i-3) + j;
+       % autot viimeiselt√§ viidelt√§ tunnilta
+       lastCars = cars(max(currentIndex-4,1):currentIndex);
+       
+       % poistuvien autojen m√§√§r√§ (lastCars painotettu weightsill√§ +
+       % virhe), rajoitettu v√§lille 0..carcount.
+       carsLeaving = sum(lastCars .* weights((end+1-size(lastCars,2)):end)) + normrnd(0,5);
+       carsLeaving = min(max(0, carsLeaving),carcount);
+       carcount = carcount - carsLeaving;
+       
+       % saapuvien autojen m√§√§r√§, rajoitettu v√§lille 0..(200-carcount)
+       carsEntering = max(min(incomingCars(j), 200-carcount),0);
+       carcount = carcount + carsEntering;
+       
+       leaving(currentIndex) = carsLeaving;
+       entering(currentIndex) = carsEntering;
+       cars(currentIndex) = carcount;
+       
+       j = j + 1;
+       
+   end
     
-   i = i + 1;
-    
-    
-    
+   i = i + 1
+     
 end
 
-plot(cars,'-o')
+figure
+hold on
+plot(cars,'-b')
+plot(leaving,'-r')
+plot(entering,'-g')

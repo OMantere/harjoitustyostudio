@@ -5,9 +5,9 @@ close all
 expected = [3 3 3 3 3 3 10 20 60 40 30 20 40 20 30 14 13 15 15 10 8 3 3 3];
 variance = [3 3 3 2 2 2 3 5 7 10 10 10 7 5 3 2 2 3 3 4 4 2 2 2];
 
-length = 24; % simulointiaika tunteina
+length = 240; % simulointiaika tunteina
 cars = zeros(1,length); 
-cars(1) = 10; % alustetaan autojen määrä ajan funktiona
+cars(1) = 10; % alustetaan autojen mï¿½ï¿½rï¿½ ajan funktiona
 
 norm = sum( (0.7*ones(1,5)).^(1:5) );
 weights = 1/norm * (0.7*ones(1,5)).^(1:5); % poistuvien autojen painokertoimet
@@ -16,16 +16,16 @@ weights = 1/norm * (0.7*ones(1,5)).^(1:5); % poistuvien autojen painokertoimet
 i = 1;
 while (i<length)
    
-   % saapuvien autojen määrä ajanhetkellä i:
+   % saapuvien autojen mï¿½ï¿½rï¿½ ajanhetkellï¿½ i:
    carsEntering = normrnd(expected(1 + rem(i,23)),variance(1 + rem(i,23)));
    
-   % autot viimeiseltä viideltä tunnilta
+   % autot viimeiseltï¿½ viideltï¿½ tunnilta
    lastCars = cars(max(i-4,1):i);
    
-   % poistuvien autojen määrä (lastCars painotettu weightsillä + virhe)
+   % poistuvien autojen mï¿½ï¿½rï¿½ (lastCars painotettu weightsillï¿½ + virhe)
    carsLeaving = sum(lastCars .* weights((end+1-size(lastCars,2)):end)) + normrnd(0,25);
    
-   % autojen määrä seuraavalla ajanhetkellä, rajoitettu välille 0-200.
+   % autojen mï¿½ï¿½rï¿½ seuraavalla ajanhetkellï¿½, rajoitettu vï¿½lille 0-200.
    cars(i+1) = min(max(cars(i) - carsLeaving,0)+carsEntering,200);
     
    i = i + 1;
@@ -33,5 +33,5 @@ while (i<length)
     
     
 end
-% pystyviivat keskiyöhön?
+% pystyviivat keskiyï¿½hï¿½n?
 plot(cars,'-o')
