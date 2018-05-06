@@ -5,14 +5,18 @@ close all
 defaultExpected = [3 3 3 3 3 3 10 20 60 40 30 20 40 20 30 14 13 15 15 10 8 3 3 3];
 defaultSigma = [3 3 3 2 2 2 3 5 7 10 10 10 7 5 3 2 2 3 3 4 4 2 2 2];
 
-length = 100; % simulointiaika vuorokausina
+
+carsAverage = zeros(1,24); % Keskimääräinen autojen lukumäärä kunakin tuntina
+
+length = 5; % simulointiaika vuorokausina
 cars = zeros(1,length*24); 
 leaving = zeros(1,length*24);
 entering = zeros(1,length*24);
 carcount = 10; % alustetaan autojen määrä ajan funktiona
 
-fineFlags = (rand(1,length + 2)<= 1/30 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
-% fineFlags = zeros(1,length+2), jos ei lappuliisoja
+fineFlags = (rand(1,length + 2)<= 1/10 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
+%fineFlags = zeros(1,length+2); %, jos ei lappuliisoja
+fineFlags(1,1:2) = [0 0]
 norm = sum( (0.7*ones(1,5)).^(1:5) );
 weights = 1/norm * (0.7*ones(1,5)).^(1:5); % poistuvien autojen painokertoimet
 
@@ -38,26 +42,43 @@ while ((i-2)<=length)
        % virhe), rajoitettu välille 0..carcount.
        carsLeaving = sum(lastCars .* weights((end+1-size(lastCars,2)):end)) + normrnd(0,5);
        carsLeaving = min(max(0, carsLeaving),carcount);
-       carcount = carcount - carsLeaving;
+       carcount = carcount - round(carsLeaving); % Kokonaislukujen tarkkuudella
        
        % saapuvien autojen määrä, rajoitettu välille 0..(200-carcount)
        carsEntering = max(min(incomingCars(j), 200-carcount),0);
-       carcount = carcount + carsEntering;
+       carcount = carcount + round(carsEntering); % Kokonaislukujen tarkkuudella
        
        leaving(currentIndex) = carsLeaving;
        entering(currentIndex) = carsEntering;
        cars(currentIndex) = carcount;
-       
+       carsAverage(j) = carsAverage(j) + carcount;
        j = j + 1;
        
    end
+   
+   
     
-   i = i + 1
+   i = i + 1;
      
 end
+carsAverage = carsAverage ./ length;
+sum(cars) / size(cars,2)
 
 figure
 hold on
 plot(cars,'-b')
-plot(leaving,'-r')
-plot(entering,'-g')
+plot(leaving,'--r')
+plot(entering,'--g')
+xlabel('Aika (h)')
+ylabel('Autoja')
+
+for i=3:size(fineFlags,2) % Piirtää pystyviivan lappuliisan käyntiä seuraavalle keskiyölle 
+   if (fineFlags(i))
+      line([24*(i-2) 24*(i-2)], [0 200],'Color',[0.5 0.5 0.5],'LineStyle','--') 
+   end
+end
+
+figure
+plot(carsAverage)
+xlabel('Kellonaika (h)')
+ylabel('Autoja, keskiarvo')
