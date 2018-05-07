@@ -7,14 +7,17 @@ defaultSigma = [3 3 3 2 2 2 3 5 7 10 10 10 7 5 3 2 2 3 3 4 4 2 2 2];
 
 
 carsAverage = zeros(1,24); % Keskimääräinen autojen lukumäärä kunakin tuntina
+carsMin = 200 * ones(1,24);
+carsMax = zeros(1,24);
 
-length = 5; % simulointiaika vuorokausina
+
+length = 6*30; % simulointiaika vuorokausina
 cars = zeros(1,length*24); 
 leaving = zeros(1,length*24);
 entering = zeros(1,length*24);
 carcount = 10; % alustetaan autojen määrä ajan funktiona
 
-fineFlags = (rand(1,length + 2)<= 1/10 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
+fineFlags = (rand(1,length + 2)<= 1/30 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
 %fineFlags = zeros(1,length+2); %, jos ei lappuliisoja
 fineFlags(1,1:2) = [0 0]
 norm = sum( (0.7*ones(1,5)).^(1:5) );
@@ -52,6 +55,15 @@ while ((i-2)<=length)
        entering(currentIndex) = carsEntering;
        cars(currentIndex) = carcount;
        carsAverage(j) = carsAverage(j) + carcount;
+       
+       if carcount <= carsMin(j)
+          carsMin(j) = carcount 
+       end
+       
+       if carcount >= carsMax(j)
+           carsMax(j) = carcount
+       end
+       
        j = j + 1;
        
    end
@@ -63,22 +75,33 @@ while ((i-2)<=length)
 end
 carsAverage = carsAverage ./ length;
 sum(cars) / size(cars,2)
+t = 1:(length*24)
 
 figure
 hold on
-plot(cars,'-b')
-plot(leaving,'--r')
-plot(entering,'--g')
-xlabel('Aika (h)')
+plot(t/24,cars,'-b')
+plot(t/24,leaving,'--r')
+plot(t/24,entering,'--g')
+xlabel('Aika (vuorokausia)')
 ylabel('Autoja')
+
+axis([-Inf Inf 0 160])
 
 for i=3:size(fineFlags,2) % Piirtää pystyviivan lappuliisan käyntiä seuraavalle keskiyölle 
    if (fineFlags(i))
-      line([24*(i-2) 24*(i-2)], [0 200],'Color',[0.5 0.5 0.5],'LineStyle','--') 
+      line([(i-2) (i-2)], [0 200],'Color',[0.5 0.5 0.5],'LineStyle','--') 
    end
 end
 
+legend('parkkipaikalla','poistumassa','saapumassa')
+
 figure
+hold on
+
+plot(carsMax,'--')
 plot(carsAverage)
+plot(carsMin,'--')
+
 xlabel('Kellonaika (h)')
-ylabel('Autoja, keskiarvo')
+ylabel('Autoja')
+legend('maksimi','keskiarvo','minimi')
