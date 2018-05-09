@@ -5,8 +5,6 @@ global len1 len2 len3 len4 k_s errorsigma_s lotsize_s weight_s results correlati
 initialoccupancy = 10;
 simulationlength = 30*6;
 fines = 0;
-doplot = 0;
-doplot2 = 0;
 
 k_s = 1:1:10;
 errorsigma_s = 1:5:21;
@@ -41,7 +39,7 @@ parfor l=1:len1
             for o=1:len4
                 weight = weight_s(o);
                 idx = (m-1)*len3*len4 + (n-1)*len4 + o;
-                [vv, co] = parkki(k, weight, errorsigma, lotsize, initialoccupancy, simulationlength, fines, doplot);
+                [vv, co] = parkki(k, weight, errorsigma, lotsize, initialoccupancy, simulationlength, fines, 0);
                 v(m, n, o, :, :) = vv;
                 cor(m, n, o) = co;
                 mc(m, n, o) = length(find(vv(1, :) == lotsize));
@@ -65,16 +63,4 @@ end
 correlations = corrmat;
 results = resultsmat;
 maxcount = mcmat;
-
-if doplot2
-    for l=1:len1
-        for m=1:len2
-            for n=1:len3
-                for o=1:len4
-                    resultsplot(l, m, n)
-                end
-            end
-        end
-    end
-end
 
