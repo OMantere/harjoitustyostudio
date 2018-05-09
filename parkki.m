@@ -1,5 +1,4 @@
-clear all
-close all
+function [out, correlation] = myfun(k, weight, errorsigma, lotsize, initialoccupancy, simulationlength, fines, doplot)
 
 % Saapuvien autojen jakauman ominaisuudet vuorokauden aikana
 defaultExpected = [3 3 3 3 3 3 10 20 60 40 30 20 40 20 30 14 13 15 15 10 8 3 3 3];
@@ -7,25 +6,27 @@ defaultSigma = [3 3 3 2 2 2 3 5 7 10 10 10 7 5 3 2 2 3 3 4 4 2 2 2];
 
 
 carsAverage = zeros(1,24); % Keskimääräinen autojen lukumäärä kunakin tuntina
-carsMin = 200 * ones(1,24);
+carsMin = lotsize * ones(1,24);
 carsMax = zeros(1,24);
 
 
-length = 6*30; % simulointiaika vuorokausina
-cars = zeros(1,length*24); 
-leaving = zeros(1,length*24);
-entering = zeros(1,length*24);
-carcount = 10; % alustetaan autojen määrä ajan funktiona
+cars = zeros(1,simulationlength*24); 
+leaving = zeros(1,simulationlength*24);
+entering = zeros(1,simulationlength*24);
+carcount = initialoccupancy; % alustetaan autojen määrä ajan funktiona
 
-fineFlags = (rand(1,length + 2)<= 1/30 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
-%fineFlags = zeros(1,length+2); %, jos ei lappuliisoja
-fineFlags(1,1:2) = [0 0]
-norm = sum( (0.7*ones(1,5)).^(1:5) );
-weights = 1/norm * (0.7*ones(1,5)).^(1:5); % poistuvien autojen painokertoimet
+if fines
+    fineFlags = (rand(1,simulationlength + 2)<= 1/30 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
+else
+    fineFlags = zeros(1,simulationlength+2); %, jos ei lappuliisoja
+end
+fineFlags(1,1:2) = [0 0];
+norm = sum( (weight*ones(1,k)).^(1:k) );
+weights = 1/norm * (weight*ones(1,k)).^(1:k); % poistuvien autojen painokertoimet
 
 % iteroidaan vuorokausien yli:
 i = 3;
-while ((i-2)<=length)
+while ((i-2)<=simulationlength)
     
    % saapuvien autojen määrä joka tunti:
    if ( fineFlags(i-1) || fineFlags(i-2) ) % jos lappuliisa:
@@ -38,70 +39,87 @@ while ((i-2)<=length)
    j = 1;
    while (j <= 24)
        currentIndex = 24 * (i-3) + j;
-       % autot viimeiseltä viideltä tunnilta
-       lastCars = cars(max(currentIndex-4,1):currentIndex);
-       
-       % poistuvien autojen määrä (lastCars painotettu weightsillä +
-       % virhe), rajoitettu välille 0..carcount.
-       carsLeaving = sum(lastCars .* weights((end+1-size(lastCars,2)):end)) + normrnd(0,5);
-       carsLeaving = min(max(0, carsLeaving),carcount);
-       carcount = carcount - round(carsLeaving); % Kokonaislukujen tarkkuudella
-       
-       % saapuvien autojen määrä, rajoitettu välille 0..(200-carcount)
-       carsEntering = max(min(incomingCars(j), 200-carcount),0);
-       carcount = carcount + round(carsEntering); % Kokonaislukujen tarkkuudella
-       
-       leaving(currentIndex) = carsLeaving;
+       % saapuvien autojen määrä, rajoitettu välille 0..(lotsize-carcount)
+       carsEntering = max(min(incomingCars(j), lotsize-carcount),0);
        entering(currentIndex) = carsEntering;
+       carcount = carcount + round(carsEntering); % Kokonaislukujen tarkkuudella
+
+       % autot viimeiseltä k:lta tunnilta
+       lastIncoming = entering(max(currentIndex-k+1,1):currentIndex);
+       
+       % poistuvien autojen määrä (lastIncoming painotettu weightsillä +
+       % virhe), rajoitettu välille 0..carcount.
+       carsLeaving = sum(lastIncoming .* weights((end+1-size(lastIncoming,2)):end)) + normrnd(0,errorsigma);
+       carsLeaving = min(max(0, carsLeaving),carcount);
+       leaving(currentIndex) = carsLeaving;
+       carcount = carcount - round(carsLeaving); % Kokonaislukujen tarkkuudella
+              
        cars(currentIndex) = carcount;
        carsAverage(j) = carsAverage(j) + carcount;
+
        
        if carcount <= carsMin(j)
-          carsMin(j) = carcount 
+          carsMin(j) = carcount;
        end
        
        if carcount >= carsMax(j)
-           carsMax(j) = carcount
+           carsMax(j) = carcount;
        end
        
        j = j + 1;
        
    end
    
-   
-    
    i = i + 1;
      
 end
-carsAverage = carsAverage ./ length;
-sum(cars) / size(cars,2)
-t = 1:(length*24)
 
-figure
-hold on
-plot(t/24,cars,'-b')
-plot(t/24,leaving,'--r')
-plot(t/24,entering,'--g')
-xlabel('Aika (vuorokausia)')
-ylabel('Autoja')
+carsAverage = carsAverage ./ simulationlength;
+sum(cars) / size(cars,2);
+t = 1:(simulationlength*24);
 
-axis([-Inf Inf 0 160])
+% Lasketaan keskimaarainen korrelaatio kaikkien kayrien yli keskimaarakayraan nahden
+correlation = 0;
+for i=1:simulationlength
+    correlation = correlation + corr((cars((i-1)*24 + 1:i*24))', carsAverage');
+end
+if isnan(correlation)
+    correlation = 0;
+end
+correlation = correlation / simulationlength;
 
-for i=3:size(fineFlags,2) % Piirtää pystyviivan lappuliisan käyntiä seuraavalle keskiyölle 
-   if (fineFlags(i))
-      line([(i-2) (i-2)], [0 200],'Color',[0.5 0.5 0.5],'LineStyle','--') 
-   end
+if doplot
+    figure
+    hold on
+    plot(t/24,cars,'-b')
+    plot(t/24,leaving,'--r')
+    plot(t/24,entering,'--g')
+    xlabel('Aika (vuorokausia)')
+    ylabel('Autoja')
+
+    axis([-Inf Inf 0 160])
+
+    for i=3:size(fineFlags,2) % Piirtää pystyviivan lappuliisan käyntiä seuraavalle keskiyölle 
+       if (fineFlags(i))
+          line([(i-2) (i-2)], [0 lotsize],'Color',[0.5 0.5 0.5],'LineStyle','--') 
+       end
+    end
+
+    legend('parkkipaikalla','poistumassa','saapumassa')
+
+    figure
+    hold on
+
+    plot(carsMax,'--')
+    plot(carsAverage)
+    plot(carsMin,'--')
+
+    xlabel('Kellonaika (h)')
+    ylabel('Autoja')
+    legend('maksimi','keskiarvo','minimi')
+
 end
 
-legend('parkkipaikalla','poistumassa','saapumassa')
+out = [carsMax; carsAverage; carsMin];
 
-figure
-hold on
-
-plot(carsMax,'--')
-plot(carsAverage)
-plot(carsMin,'--')
-
-xlabel('Kellonaika (h)')
-ylabel('Autoja')
-legend('maksimi','keskiarvo','minimi')
+end
