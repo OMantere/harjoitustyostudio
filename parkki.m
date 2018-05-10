@@ -1,4 +1,4 @@
-function [out, correlation] = myfun(k, weight, errorsigma, lotsize, initialoccupancy, simulationlength, fines, doplot)
+function [out, correlation] = myfun(k, weight, errorsigma, lotsize, initialoccupancy, simulationlength, fineprob, doplot)
 
 % Saapuvien autojen jakauman ominaisuudet vuorokauden aikana
 defaultExpected = [3 3 3 3 3 3 10 20 60 40 30 20 40 20 30 14 13 15 15 10 8 3 3 3];
@@ -15,11 +15,8 @@ leaving = zeros(1,simulationlength*24);
 entering = zeros(1,simulationlength*24);
 carcount = initialoccupancy; % alustetaan autojen määrä ajan funktiona
 
-if fines
-    fineFlags = (rand(1,simulationlength + 2)<= 1/30 ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
-else
-    fineFlags = zeros(1,simulationlength+2); %, jos ei lappuliisoja
-end
+fineFlags = (rand(1,simulationlength + 2)<= fineprob ); % totuusarvovektori, joka määrää, saapuuko lappuliisa 
+
 fineFlags(1,1:2) = [0 0];
 norm = sum( (weight*ones(1,k)).^(1:k) );
 weights = 1/norm * (weight*ones(1,k)).^(1:k); % poistuvien autojen painokertoimet
