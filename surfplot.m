@@ -8,42 +8,42 @@ switch pair
         z = squeeze(data(:, :, n, o));
         [x, y] = meshgrid(k_s, errorsigma_s);
         xlbl = 'k';
-        ylbl = 'errorsigma';
+        ylbl = '\sigma_\mu';
     case 2
         m = defaults(2);
         o = defaults(4);
         z = squeeze(data(:, m, :, o));
         [x, y] = meshgrid(k_s, lotsize_s);
         xlbl = 'k';
-        ylbl = 'lotsize';
+        ylbl = 'Pysakointipaikan koko';
     case 3
         m = defaults(2);
         n = defaults(4);
         z = squeeze(data(:, m, n, :));
         [x, y] = meshgrid(k_s, weight_s);
         xlbl = 'k';
-        ylbl = 'weight';
+        ylbl = 'p(i)';
     case 4
         l = defaults(1);
         o = defaults(4);
         z = squeeze(data(l, :, :, o));
         [x, y] = meshgrid(errorsigma_s, lotsize_s);
-        xlbl = 'errorsigma';
-        ylbl = 'lotsize';
+        xlbl = '\sigma_\mu';
+        ylbl = 'Pysakointipaikan koko';
     case 5
         l = defaults(1);
         n = defaults(3);
         z = squeeze(data(l, :, n, :));
         [x, y] = meshgrid(errorsigma_s, weight_s);
-        xlbl = 'errorsigma';
-        ylbl = 'weight';
+        xlbl = '\sigma_\mu';
+        ylbl = 'p(i)';
     case 6
         l = defaults(1);
         m = defaults(2);
         z = squeeze(data(l, m, :, :));
         [x, y] = meshgrid(lotsize_s, weight_s);
-        xlbl = 'lotsize';
-        ylbl = 'weight';
+        xlbl = 'Pysakointipaikan koko';
+        ylbl = 'p(i)';
 
     otherwise
         disp('pair needs to be 1-6')
