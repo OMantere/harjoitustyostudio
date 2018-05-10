@@ -1,5 +1,6 @@
 function surfplot(pair, data, titl)
 global defaults len1 len2 len3 len4 k_s errorsigma_s lotsize_s weight_s
+set(0,'defaultAxesFontSize',16)
 figure
 switch pair
     case 1
